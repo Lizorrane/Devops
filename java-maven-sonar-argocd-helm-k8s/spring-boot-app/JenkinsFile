@@ -6,13 +6,12 @@ pipeline {
     }
   }
   
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', url: 'https://github.com/Lizorrane/Devops.git', credentialsId: 'git-cred'
-      }
-    }
-    
+ stage('Checkout') {
+  steps {
+    git branch: 'main', url: 'https://github.com/Lizorrane/Devops.git', credentialsId: 'git-cred'
+  }
+}
+
     stage('Build and Test') {
       steps {
         sh 'ls -ltr'
