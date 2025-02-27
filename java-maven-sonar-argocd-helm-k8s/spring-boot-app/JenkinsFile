@@ -29,6 +29,106 @@ pipeline {
         }
       }
     }
+pipeline {
+    agent {
+        docker {
+            image 'abhishekf5/maven-abhishek-docker-agent:v1'
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // Permite acesso ao Docker do host
+        }
+    }
+
+    environment {
+        SONAR_URL = "http://204.236.220.14:9000"
+        IMAGE_NAME = "lizorrane/ultimate-cicd"
+        REGISTRY = "docker.io/lizorrane"
+        GIT_REPO_NAME = "Devops"
+        GIT_USER_NAME = "Lizorrane"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                sh 'echo passed'
+            }
+        }
+
+        stage('Build and Test') {
+            steps {
+                sh 'ls -ltr'
+                sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
+            }
+        }
+
+        stage('Static Code Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_AUTH_TOKEN')]) {
+                    sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            environment {
+                DOCKER_IMAGE = "${IMAGE_NAME}:${BUILD_NUMBER}"
+            }
+            steps {
+                script {
+                    sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+                }
+            }
+        }
+
+        stage('Security Scan com Trivy') {
+            steps {
+                script {
+                    sh '''
+                        echo "🔍 Executando análise de vulnerabilidades com Trivy..."
+                        trivy image --exit-code 1 --severity HIGH,CRITICAL ${IMAGE_NAME}:${BUILD_NUMBER} || echo "🛑 Vulnerabilidades encontradas!"
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'docker-hub-credentials', variable: 'DOCKER_TOKEN')]) {
+                        sh 'echo $DOCKER_TOKEN | docker login -u lizorrane --password-stdin'
+                        sh 'docker push ${IMAGE_NAME}:${BUILD_NUMBER}'
+                        sh 'docker logout'
+                    }
+                }
+            }
+        }
+
+        stage('Update Deployment File') {
+            steps {
+                withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
+                    sh '''
+                        git config user.email "liz.mmarra@gmail.com"
+                        git config user.name "${GIT_USER_NAME}"
+                        sed -i -e "s|ultimate-cicd:.*|ultimate-cicd:${BUILD_NUMBER}|g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                        git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '🚀 Realizando Deploy...'
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
+        }
+    }
+}
 stage('Build and Push Docker Image') {
     environment {
         DOCKER_IMAGE = "lizorrane/ultimate-cicd:${BUILD_NUMBER}"
