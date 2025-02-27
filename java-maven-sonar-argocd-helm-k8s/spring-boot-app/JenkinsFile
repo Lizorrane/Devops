@@ -21,7 +21,7 @@ pipeline {
     }
     stage('Static Code Analysis') {
       environment {
-        SONAR_URL = "http://204.236.220.14:9000"
+        SONAR_URL = "http://54.158.7.113:9000"
       }
       steps {
         withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_AUTH_TOKEN')]) {
@@ -66,8 +66,8 @@ stage('Update Deployment File') {
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                     git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                 '''
-            }
+              }  
         }
     }
   }
-}
+
