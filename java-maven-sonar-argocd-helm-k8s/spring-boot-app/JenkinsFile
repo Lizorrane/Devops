@@ -49,77 +49,7 @@ stage('Build and Push Docker Image') {
             }
         }
     }
-pipeline {
-    agent any
 
-    environment {
-        IMAGE_NAME = "meu-aplicativo"
-        IMAGE_TAG = "latest"
-        REGISTRY = "docker.io/meu-repositorio"
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/meu-repositorio.git'
-            }
-        }
-
-        stage('Build com Maven') {
-            agent { node { label 'maven-node' } }
-            steps {
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Análise estática com SonarQube') {
-            agent { node { label 'sonar-node' } }
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
-                }
-            }
-        }
-
-        stage('Build Docker') {
-            agent { node { label 'docker-node' } }
-            steps {
-                sh 'docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .'
-            }
-        }
-
-        stage('Escaneamento de Vulnerabilidades com Trivy') {
-            agent { node { label 'trivy-node' } }
-            steps {
-                sh 'trivy image $REGISTRY/$IMAGE_NAME:$IMAGE_TAG > trivy-report.txt'
-                sh 'cat trivy-report.txt'
-            }
-        }
-
-        stage('Push para o Registry') {
-            agent { node { label 'docker-node' } }
-            steps {
-                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
-                    sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
-                }
-            }
-        }
-
-        stage('Deploy') {
-            agent { node { label 'deploy-node' } }
-            steps {
-                echo 'Realizando Deploy...'
-                // Adicione comandos de deploy (Kubernetes, ECS, etc.)
-            }
-        }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
-        }
-    }
-}
 stage('Update Deployment File') {
         environment {
             GIT_REPO_NAME = "Devops"
