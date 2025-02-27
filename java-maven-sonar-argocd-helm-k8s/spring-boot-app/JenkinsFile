@@ -49,6 +49,70 @@ stage('Build and Push Docker Image') {
             }
         }
     }
+}pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "meu-aplicativo"
+        IMAGE_TAG = "latest"
+        REGISTRY = "docker.io/meu-repositorio"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/meu-repositorio.git'
+            }
+        }
+
+        stage('Build com Maven') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Análise estática com SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Build Docker') {
+            steps {
+                sh 'docker build -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG .'
+            }
+        }
+
+        stage('Escaneamento de Vulnerabilidades com Trivy') {
+            steps {
+                sh 'trivy image $REGISTRY/$IMAGE_NAME:$IMAGE_TAG > trivy-report.txt'
+                sh 'cat trivy-report.txt'
+            }
+        }
+
+        stage('Push para o Registry') {
+            steps {
+                withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+                    sh 'docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Realizando Deploy...'
+                // Adicione comandos de deploy (Kubernetes, ECS, etc.)
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'trivy-report.txt', fingerprint: true
+        }
+    }
 }
 
 stage('Update Deployment File') {
