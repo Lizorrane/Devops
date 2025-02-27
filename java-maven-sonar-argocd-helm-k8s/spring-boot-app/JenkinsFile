@@ -31,20 +31,16 @@ pipeline {
     }
 stage('Build and Push Docker Image') {
     steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
-            sh 'docker build -t lizorrane/minha-aplicacao:latest .'  
-            sh 'docker push lizorrane/minha-aplicacao:latest'
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_TOKEN')]) {
+            sh '''
+                echo $DOCKER_TOKEN | docker login -u $DOCKER_USER --password-stdin
+                docker build -t lizorrane/minha-aplicacao:latest .
+                docker push lizorrane/minha-aplicacao:latest
+            '''
         }
     }
 }
-stage('Test Credentials') {
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-            sh 'echo "Credenciais funcionam! Usuário: $DOCKER_USER"'
-        }
-    }
-}
+
 stage('Update Deployment File') {
         environment {
             GIT_REPO_NAME = "Devops"
