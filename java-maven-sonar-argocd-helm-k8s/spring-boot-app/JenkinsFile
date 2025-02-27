@@ -21,7 +21,7 @@ pipeline {
     }
     stage('Static Code Analysis') {
       environment {
-        SONAR_URL = "http://3.85.210.249:9000"
+        SONAR_URL = "http://http://204.236.220.14:9000"
       }
       steps {
         withCredentials([string(credentialsId: 'sonar', variable: 'SONAR_AUTH_TOKEN')]) {
@@ -31,7 +31,7 @@ pipeline {
     }
 stage('Build and Push Docker Image') {
     environment {
-        DOCKER_IMAGE = "camilacarolina/ultimate-cicd:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "lizorrane/ultimate-cicd:${BUILD_NUMBER}"
     }
     steps {
         script {
@@ -39,7 +39,7 @@ stage('Build and Push Docker Image') {
 
             // Recupera o token do Jenkins Credentials
             withCredentials([string(credentialsId: 'docker-cred', variable: 'DOCKER_TOKEN')]) {
-                sh 'echo $DOCKER_TOKEN | docker login -u seu-usuario-docker --password-stdin'
+                sh 'echo $DOCKER_TOKEN | docker login -u lizorrane --password-stdin'
 
                 def dockerImage = docker.image("${DOCKER_IMAGE}")
                 dockerImage.push()
@@ -52,14 +52,14 @@ stage('Build and Push Docker Image') {
 }
 stage('Update Deployment File') {
         environment {
-            GIT_REPO_NAME = "seu-repositorio-git"
-            GIT_USER_NAME = "seu-usuario-git"
+            GIT_REPO_NAME = "Devops"
+            GIT_USER_NAME = "Lizorrane"
         }
         steps {
             withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
                 sh '''
-                    git config user.email "seu-email-git@gmail.com"
-                    git config user.name "seu-usuario-git"
+                    git config user.email "liz.mmarra@gmail.com"
+                    git config user.name "Lizorrane"
                     BUILD_NUMBER=${BUILD_NUMBER}
                     sed -i -e "s/ultimate-cicd.*/ultimate-cicd:${BUILD_NUMBER}/g"  java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
                     git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
