@@ -2,21 +2,24 @@ pipeline {
   agent {
     docker {
       image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
+      args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
-stage('Checkout') {
-  steps {
-    git branch: 'main', url: 'https://github.com/Lizorrane/Devops.git', credentialsId: 'git-cred'
-  }
-}
+
+  stages {  // <--- Bloco obrigatório que contém os stages
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/Lizorrane/Devops.git', credentialsId: 'git-cred'
+      }
+    }
+
     stage('Build and Test') {
       steps {
         sh 'ls -ltr'
-        // build the project and create a JAR file
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
+
     stage('Static Code Analysis') {
       environment {
         SONAR_URL = "http://54.158.7.113:9000"
@@ -27,45 +30,61 @@ stage('Checkout') {
         }
       }
     }
-stage('Build and Push Docker Image') {
-    environment {
+
+    stage('Security Scan with Trivy') {
+      steps {
+        sh '''
+          if ! command -v trivy &> /dev/null
+          then
+              echo "Installing Trivy..."
+              curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+          else
+              echo "Trivy is already installed."
+          fi
+        '''
+        sh 'trivy fs java-maven-sonar-argocd-helm-k8s/spring-boot-app'
+      }
+    }
+
+    stage('Build and Push Docker Image') {
+      environment {
         DOCKER_IMAGE = "lizorrane/ultimate-cicd:${BUILD_NUMBER}"
-    }
-    steps {
+      }
+      steps {
         script {
-            sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
 
-            // Recupera o token do Jenkins Credentials
-            withCredentials([string(credentialsId: 'docker-cred', variable: 'DOCKER_TOKEN')]) {
-                sh 'echo $DOCKER_TOKEN | docker login -u lizorrane --password-stdin'
+          withCredentials([string(credentialsId: 'docker-cred', variable: 'DOCKER_TOKEN')]) {
+            sh 'echo $DOCKER_TOKEN | docker login -u lizorrane --password-stdin'
 
-                def dockerImage = docker.image("${DOCKER_IMAGE}")
-                dockerImage.push()
+            def dockerImage = docker.image("${DOCKER_IMAGE}")
+            dockerImage.push()
 
-                // Faz logout para evitar exposição do token no ambiente
-                sh 'docker logout'
-            }
+            sh 'docker logout'
+          }
         }
+      }
     }
-}
-stage('Update Deployment File') {
-        environment {
-            GIT_REPO_NAME = "Devops"
-            GIT_USER_NAME = "Lizorrane"
-        }
-        steps {
-            withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
-                sh '''
-                    git config user.email "liz.mmarra@gmail.com"
-                    git config user.name "Lizorrane"
-                    BUILD_NUMBER=${BUILD_NUMBER}
-                    sed -i -e "s/ultimate-cicd.*/ultimate-cicd:${BUILD_NUMBER}/g"  java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-                    git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-                '''
-              }  
-        }
+
+    stage('Update Deployment File') {
+      environment {
+        GIT_REPO_NAME = "Devops"
+        GIT_USER_NAME = "Lizorrane"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            git config user.email "liz.mmarra@gmail.com"
+            git config user.name "Lizorrane"
+            BUILD_NUMBER=${BUILD_NUMBER}
+            sed -i -e "s/ultimate-cicd.*/ultimate-cicd:${BUILD_NUMBER}/g"  java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+            git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
+            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+          '''
+        }  
+      }
     }
-  }
+  } // <--- Fechando o bloco stages corretamente
+} // <--- Fechando o bloco pipeline corretamente
 
