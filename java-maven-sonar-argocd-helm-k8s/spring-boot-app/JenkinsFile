@@ -32,6 +32,8 @@ pipeline {
 stage('Build and Push Docker Image') {
     steps {
         withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_TOKEN')]) {
+            sh 'pwd'  // Mostra o diretório atual
+            sh 'ls -l'  // Lista os arquivos do workspace
             sh '''
                 echo $DOCKER_TOKEN | docker login -u $DOCKER_USER --password-stdin
                 docker build -t lizorrane/minha-aplicacao:latest .
