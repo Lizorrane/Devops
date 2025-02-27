@@ -30,26 +30,16 @@ pipeline {
       }
     }
 stage('Build and Push Docker Image') {
-    environment {
-        DOCKER_IMAGE = "lizorrane/ultimate-cicd:${BUILD_NUMBER}"
-    }
     steps {
-        script {
-            sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
-
-            // Recupera o token do Jenkins Credentials
-            withCredentials([string(credentialsId: 'docker-cred', variable: 'DOCKER_TOKEN')]) {
-                sh 'echo $DOCKER_TOKEN | docker login -u seu-usuario-docker --password-stdin'
-
-                def dockerImage = docker.image("${DOCKER_IMAGE}")
-                dockerImage.push()
-
-                // Faz logout para evitar exposição do token no ambiente
-                sh 'docker logout'
-            }
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin'
+            sh 'docker build -t lizorrane/minha-aplicacao:latest .'  
+            sh 'docker push lizorrane/minha-aplicacao:latest'
         }
     }
 }
+
+
 stage('Update Deployment File') {
         environment {
             GIT_REPO_NAME = "Devops"
