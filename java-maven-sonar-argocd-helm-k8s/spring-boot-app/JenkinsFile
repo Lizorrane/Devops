@@ -38,8 +38,13 @@ stage('Build and Push Docker Image') {
         }
     }
 }
-
-
+stage('Test Credentials') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-credencials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
+            sh 'echo "Credenciais funcionam! Usuário: $DOCKER_USER"'
+        }
+    }
+}
 stage('Update Deployment File') {
         environment {
             GIT_REPO_NAME = "Devops"
