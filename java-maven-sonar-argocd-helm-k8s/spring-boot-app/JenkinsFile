@@ -13,14 +13,13 @@ pipeline {
       }
     }
 
-  stage('Análise de Dependências - OWASP Dependency-Check') {
-    steps {
-    sh 'ls -l /usr/local/bin/dependency-check/bin/'  // Lista arquivos para verificar se o script existe
-    sh 'whoami'  // Verifica qual usuário está executando o script
-    sh '/usr/bin/env bash /usr/local/bin/dependency-check/bin/dependency-check.sh --scan . --format HTML --out dependency-check-report'
-  }
-}
-
+    stage('Análise de Dependências - OWASP Dependency-Check') {
+      steps {
+        sh 'ls -l /usr/local/bin/dependency-check/bin/'  // Lista arquivos para verificar se o script existe
+        sh 'whoami'  // Verifica qual usuário está executando o script
+        sh '/usr/bin/env bash /usr/local/bin/dependency-check/bin/dependency-check.sh --scan . --format HTML --out dependency-check-report'
+      }
+    }
 
     stage('Publicar Relatório de Vulnerabilidades') {
       steps {
