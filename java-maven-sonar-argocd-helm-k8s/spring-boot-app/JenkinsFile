@@ -56,7 +56,7 @@ stage('Update Deployment File') {
             GIT_USER_NAME = "Lizorrane"
         }
         steps {
-            withCredentials([string(credentialsId: 'git', variable: 'GITHUB_TOKEN')]) {
+            withCredentials([string(credentialsId: 'git-cred', variable: 'GITHUB_TOKEN')]) {
                 sh '''
                     git config user.email "liz.mmarra@gmail.com"
                     git config user.name "Lizorrane"
