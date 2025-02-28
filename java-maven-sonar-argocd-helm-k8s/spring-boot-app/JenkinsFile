@@ -30,14 +30,14 @@ pipeline {
         ])
     }
 }
-    stage('Build and Test') {
+  stage('Build and Test') {
       steps {
         sh 'ls -ltr'
         // build the project and create a JAR file
         sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
       }
     }
-    stage('Static Code Analysis') {
+  stage('Static Code Analysis') {
       environment {
         SONAR_URL = "http://3.80.83.35:9000"
       }
@@ -47,7 +47,7 @@ pipeline {
         }
       }
     }
-stage('Build and Push Docker Image') {
+  stage('Build and Push Docker Image') {
     environment {
         DOCKER_IMAGE = "lizorrane/ultimate-cicd:${BUILD_NUMBER}"
     }
@@ -68,7 +68,7 @@ stage('Build and Push Docker Image') {
         }
     }
 }
-stage('Update Deployment File') {
+  stage('Update Deployment File') {
         environment {
             GIT_REPO_NAME = "Devops"
             GIT_USER_NAME = "Lizorrane"
