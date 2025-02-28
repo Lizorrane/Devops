@@ -49,7 +49,7 @@
 
     </dependencies>
 
-<build>
+    <build>
 
         <finalName>spring-boot-web</finalName>
 
@@ -107,4 +107,5 @@
            </executions>
         </plugin>
     </plugins>
-</build>
+    </build>
+</project>
