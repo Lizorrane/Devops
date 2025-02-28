@@ -12,11 +12,13 @@ pipeline {
         //git branch: 'main', url: 'https://github.com/sunitabachhav2007/Jenkins-Zero-To-Hero.git'
       }
     }
-  stage('Análise de Dependências - OWASP Dependency-Check') {
-    steps {
-        dependencyCheck odcInstallation: 'default', additionalArguments: '--scan . --format HTML'
-    }
-}
+  stages {
+      stage('Análise de Dependências - OWASP Dependency-Check') {
+        steps {
+              script {
+                    def odcInstallation = 'default'
+                    dependencyCheck odcInstallation: odcInstallation, additionalArguments: "--scan . --format HTML --out ${DEP_CHECK_DIR}"
+                }
   stage('Publicar Relatório de Vulnerabilidades') {
       steps {
         publishHTML (target: [
