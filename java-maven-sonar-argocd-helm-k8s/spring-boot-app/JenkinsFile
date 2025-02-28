@@ -13,11 +13,10 @@ pipeline {
       }
     }
   stage('Análise de Dependências - OWASP Dependency-Check') {
-      steps {
+    steps {
         dependencyCheck odcInstallation: 'default', additionalArguments: '--scan . --format HTML'
     }
 }
-
   stage('Publicar Relatório de Vulnerabilidades') {
       steps {
         publishHTML (target: [
