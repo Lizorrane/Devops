@@ -14,11 +14,11 @@ pipeline {
     }
   stage('Análise de Dependências - OWASP Dependency-Check') {
     steps {
-        sh 'mkdir -p dependency-check-report'
-        sh '/usr/local/bin/dependency-check/bin/dependency-check.sh --scan . --format HTML --out dependency-check-report'
+        sh 'ls -l /usr/local/bin/dependency-check/bin/'  // Lista arquivos para verificar se existem
+        sh 'whoami'  // Confirma qual usuário está executando o script
+        sh '/usr/bin/env bash /usr/local/bin/dependency-check/bin/dependency-check.sh --scan . --format HTML --out dependency-check-report'
     }
 }
-
 
   stage('Publicar Relatório de Vulnerabilidades') {
       steps {
