@@ -12,14 +12,14 @@ pipeline {
         //git branch: 'main', url: 'https://github.com/sunitabachhav2007/Jenkins-Zero-To-Hero.git'
       }
     }
-    stage('Análise de Dependências - OWASP Dependency-Check') {
-    steps {
+  stage('Análise de Dependências - OWASP Dependency-Check') {
+      steps {
         dependencyCheck additionalArguments: '--scan . --format HTML'
     }
 }
 
-stage('Publicar Relatório de Vulnerabilidades') {
-    steps {
+ stage('Publicar Relatório de Vulnerabilidades') {
+      steps {
         publishHTML (target: [
             allowMissing: false,
             alwaysLinkToLastBuild: true,
